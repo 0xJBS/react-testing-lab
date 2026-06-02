@@ -1,46 +1,58 @@
-import React, {useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import TransactionsList from "./TransactionsList";
 import Search from "./Search";
 import AddTransactionForm from "./AddTransactionForm";
 import Sort from "./Sort";
 
 function AccountContainer() {
-  const [transactions,setTransactions] = useState([])
-  const [search,setSearch] = useState("")
-  // console.log(search)
+  const [transactions, setTransactions] = useState([]);
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("description"); // Default sort state
 
-  useEffect(()=>{
+  useEffect(() => {
     fetch("http://localhost:6001/transactions")
-    .then(r=>r.json())
-    .then(data=>setTransactions(data))
-  },[])
+      .then((r) => r.json())
+      .then((data) => setTransactions(data))
+      .catch((err) => console.error("Error fetching transactions:", err));
+  }, []);
 
-  function postTransaction(newTransaction){
-    fetch('http://localhost:6001/transactions',{
+  function postTransaction(newTransaction) {
+    fetch("http://localhost:6001/transactions", {
       method: "POST",
-      headers:{
-        "Content-Type": "application/json"
+      headers: {
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(newTransaction)
+      body: JSON.stringify(newTransaction),
     })
-    .then(r=>r.json())
-    .then(data=>setTransactions([...transactions,data]))
+      .then((r) => r.json())
+      .then((data) => setTransactions([...transactions, data]))
+      .catch((err) => console.error("Error posting transaction:", err));
   }
   
-  // Sort function here
-  function onSort(sortBy){
-    
+  // Update sort criteria state
+  function onSort(selectedCategory) {
+    setSortBy(selectedCategory);
   }
 
-  // Filter using search here and pass new variable down
-  
+  // 1. Filter transactions by description based on search input
+  const filteredTransactions = transactions.filter((transaction) =>
+    transaction.description.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // 2. Sort the filtered transactions
+  const displayedTransactions = [...filteredTransactions].sort((a, b) => {
+    if (a[sortBy] && b[sortBy]) {
+      return a[sortBy].localeCompare(b[sortBy]);
+    }
+    return 0;
+  });
 
   return (
     <div>
-      <Search setSearch={setSearch}/>
-      <AddTransactionForm postTransaction={postTransaction}/>
-      <Sort onSort={onSort}/>
-      <TransactionsList transactions={transactions} />
+      <Search setSearch={setSearch} />
+      <Sort onSort={onSort} />
+      <AddTransactionForm postTransaction={postTransaction} />
+      <TransactionsList transactions={displayedTransactions} />
     </div>
   );
 }
